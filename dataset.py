@@ -5,15 +5,16 @@ from nltk.corpus import stopwords
 import re
 
 
-class Book:
+class Dataset:
     def __init__(
-        self, remove_stopwords: bool = True, path: str = "data/booksummaries.txt"
+        self, remove_stopwords: bool = True, path: str = "data/booksummaries.txt",categories:list = ["Science Fiction","Fantasy","Mystery","Historical novel"]
     ) -> None:
         self.path = path
         self.df: pd.DataFrame = None
         self.remove_stopwords = remove_stopwords
         self.columns = ["Index", "Category", "Title", "Author", "Date", "Genres", "Summary"]
         self.sep = "\t"
+        self.categories = categories
         pass
 
     def load_csv(self, replace_nan: bool = True, have_header: bool = False):
@@ -38,7 +39,11 @@ class Book:
         if many_genres:
             genres_cleaned = []
             for i in self.df["Genres"]:
-                genres_cleaned.append(list(json.loads(i).values()))
+                gen = list(json.loads(i).values())
+                if len(self.categories) > 0:
+                    gen = list(set(gen).intersection(self.categories))
+                genres_cleaned.append(gen)
+                
             self.df["Genres"] = genres_cleaned
         else:
             genres_cleaned = []
@@ -89,5 +94,6 @@ class Book:
             pass
 
     def save_data(self, path: str = "./data/booksummaries1.txt"):
+        self.df["Genres"] = self.df["Genres"].map(";".join)
         a: pd.DataFrame = self.df
         a.to_csv(path, sep=self.sep, index=False)
